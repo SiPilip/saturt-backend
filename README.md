@@ -1,58 +1,88 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Saturt - REST API Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Saturt adalah aplikasi backend murni (Pure REST API) untuk manajemen Rukun Tetangga (RT). API ini mencakup fungsionalitas untuk mengelola penghuni, rumah, generate tagihan bulanan, pencatatan iuran publik, hingga laporan keuangan dan export file ke Excel.
 
-## About Laravel
+API ini didesain sebagai **Pure Backend** dengan otentikasi berbasis **JWT (JSON Web Tokens) via HttpOnly Cookie**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🛠️ Stack Teknologi
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Framework:** Laravel 11 (PHP 8.3+)
+- **Database:** MySQL
+- **Auth:** `php-open-source-saver/jwt-auth` (JWT Token di HttpOnly Cookie)
+- **Image Processing:** `intervention/image` (v4)
+- **Excel Export:** `maatwebsite/excel` (v3.1)
+- **Dokumentasi API:** Swagger / OpenAPI 3.0
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🚀 Panduan Instalasi (Untuk Reviewer)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Aplikasi ini **TIDAK** menggunakan *Node.js/NPM*, sehingga Anda tidak perlu menjalankan `npm install`. Proses setup murni menggunakan ekosistem PHP.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
+### 1. Clone & Install Dependencies
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone <repository_url>
+cd saturt-backend
+composer install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Konfigurasi Environment
+Salin file environment dan atur kredensial database Anda (secara default diset ke `saturt_db` dengan username `root`):
+```bash
+cp .env.example .env
+```
+*(Pastikan Anda telah membuat database kosong bernama `saturt_db` di MySQL Anda sebelum lanjut ke langkah berikutnya).*
 
-## Contributing
+### 3. Generate Keys & Storage Link
+Jalankan perintah berikut secara berurutan untuk menyiapkan kunci enkripsi, JWT secret, dan symbolic link untuk penyimpanan foto KTP:
+```bash
+php artisan key:generate
+php artisan jwt:secret
+php artisan storage:link
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 4. Migrasi & Seeding Database
+Aplikasi dilengkapi dengan seeder untuk akun Admin dan beberapa data iuran default.
+```bash
+php artisan migrate --seed
+```
+Setelah proses ini, akun default berikut akan tersedia:
+- **NIK (Login):** `3271000000000001`
+- **Password:** `admin123`
 
-## Code of Conduct
+### 5. Jalankan Server Lokal
+```bash
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 📖 Dokumentasi API (Swagger)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Untuk memudahkan pengetesan seluruh endpoint, dokumentasi interaktif **Swagger UI** telah di-bundle langsung di dalam aplikasi.
 
-## License
+Saat server berjalan, Anda dapat membuka browser dan langsung menuju:
+👉 **[http://localhost:8000](http://localhost:8000)**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Halaman utama akan langsung mengarahkan Anda ke dokumentasi API (Swagger UI). Anda bisa melihat seluruh *request payload*, *response structure*, dan deskripsi dari masing-masing endpoint di sana.
+
+### 💡 Tips Testing via Postman
+Jika Anda lebih nyaman menggunakan Postman, Anda tidak perlu memasukkan URL satu per satu secara manual. Cukup:
+1. Buka Postman.
+2. Klik tombol **Import**.
+3. Pilih file `public/swagger.yaml` dari folder proyek ini.
+4. Postman akan otomatis membuat *Collection* lengkap beserta URL dan contoh Body Payload untuk API Saturt.
+
+---
+
+## 🔐 Catatan Tentang Autentikasi (JWT + HttpOnly Cookie)
+
+API ini tidak menggunakan header `Authorization: Bearer <token>` konvensional. Sebagai gantinya, token JWT disimpan di dalam **HttpOnly Cookie** demi keamanan yang lebih tinggi terhadap serangan XSS.
+
+**Alur Testing:**
+1. Hit endpoint `POST /api/auth/login` dengan kredensial admin.
+2. Jika berhasil, server akan merespons dengan header `Set-Cookie: token=...`.
+3. Pada request selanjutnya ke endpoint *protected* (misal: `POST /api/tagihan/generate`), browser atau Postman akan otomatis mengirimkan cookie tersebut tanpa Anda perlu mengaturnya secara manual.
+
+---
+*Developed for Skill Fit Test.*

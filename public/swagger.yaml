@@ -1,0 +1,716 @@
+openapi: 3.0.3
+info:
+  title: Saturt App API
+  description: Dokumentasi API untuk backend aplikasi manajemen Rukun Tetangga (Saturt).
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api
+    description: Local Server
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: JWT Token yang otomatis diset di HttpOnly cookie saat login.
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Berhasil
+    
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Terjadi kesalahan
+          
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        total_pages:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+security:
+  - cookieAuth: []
+
+paths:
+  # ----------------------------------------------------------------------
+  # AUTHENTICATION
+  # ----------------------------------------------------------------------
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login Admin
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nik, password]
+              properties:
+                nik:
+                  type: string
+                  example: "3271000000000001"
+                password:
+                  type: string
+                  example: "admin123"
+      responses:
+        '200':
+          description: Login berhasil. Akan mengembalikan header Set-Cookie 'token'.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh JWT Token
+      responses:
+        '200':
+          description: Token diperbarui via Set-Cookie.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout Admin
+      responses:
+        '200':
+          description: Logout berhasil (menghapus cookie).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ----------------------------------------------------------------------
+  # PUBLIC / PORTAL PENGHUNI
+  # ----------------------------------------------------------------------
+  /pembayaran:
+    get:
+      tags:
+        - Public (Portal Penghuni)
+      summary: Cek Tagihan Belum Dibayar
+      security: []
+      parameters:
+        - name: nik
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data penghuni dan tagihan yang belum lunas.
+
+  /payment:
+    post:
+      tags:
+        - Public (Portal Penghuni)
+      summary: Proses Pembayaran Iuran
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nik, iuran]
+              properties:
+                nik:
+                  type: string
+                iuran:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id_tagihan:
+                        type: string
+                        format: uuid
+                      jangka:
+                        type: integer
+                      tagihan:
+                        type: integer
+      responses:
+        '200':
+          description: Pembayaran berhasil.
+    get:
+      tags:
+        - Public (Portal Penghuni)
+      summary: Riwayat Pembayaran Penghuni
+      security: []
+      parameters:
+        - name: nik
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List riwayat pembayaran.
+
+  # ----------------------------------------------------------------------
+  # DASHBOARD
+  # ----------------------------------------------------------------------
+  /dashboard/grafik:
+    get:
+      tags:
+        - Dashboard
+      summary: Grafik Pemasukan & Pengeluaran
+      parameters:
+        - name: range
+          in: query
+          schema:
+            type: integer
+            enum: [1, 3, 6, 12]
+            default: 6
+      responses:
+        '200':
+          description: Data grafik.
+
+  /dashboard/penghuni-belum-bayar:
+    get:
+      tags:
+        - Dashboard
+      summary: 10 Penghuni belum bayar bulan ini
+      responses:
+        '200':
+          description: List tagihan belum bayar.
+
+  /dashboard/pembayaran-terakhir:
+    get:
+      tags:
+        - Dashboard
+      summary: 10 Pembayaran Terakhir
+      responses:
+        '200':
+          description: List pembayaran terakhir.
+
+  # ----------------------------------------------------------------------
+  # PENGHUNI
+  # ----------------------------------------------------------------------
+  /penghuni/pagination:
+    get:
+      tags:
+        - Penghuni
+      summary: List Penghuni (Paginated)
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: OK
+
+  /penghuni:
+    post:
+      tags:
+        - Penghuni
+      summary: Tambah Penghuni Baru
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [nama, nik, foto_ktp, status_penghuni, telephone, is_menikah]
+              properties:
+                nama:
+                  type: string
+                nik:
+                  type: string
+                foto_ktp:
+                  type: string
+                  format: binary
+                status_penghuni:
+                  type: string
+                  enum: [tetap, kontrak]
+                telephone:
+                  type: string
+                is_menikah:
+                  type: boolean
+      responses:
+        '201':
+          description: Created
+
+  '/penghuni/{id}':
+    patch:
+      tags:
+        - Penghuni
+      summary: Update Penghuni
+      description: Jika ingin update foto_ktp, request harus berupa multipart/form-data dan tambahkan _method=PATCH di body. Jika tidak ada foto, bisa gunakan application/json.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nama:
+                  type: string
+                telephone:
+                  type: string
+                status_penghuni:
+                  type: string
+                is_menikah:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags:
+        - Penghuni
+      summary: Hapus Penghuni
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deleted
+
+  # ----------------------------------------------------------------------
+  # RUMAH & PENGHUNI RUMAH
+  # ----------------------------------------------------------------------
+  /rumah/pagination:
+    get:
+      tags:
+        - Rumah
+      summary: List Rumah (Paginated)
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+
+  /rumah:
+    post:
+      tags:
+        - Rumah
+      summary: Tambah Rumah
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                blok_nomor:
+                  type: string
+                  example: "A-01"
+                is_filled:
+                  type: boolean
+      responses:
+        '201':
+          description: Created
+
+  '/rumah/{id}':
+    patch:
+      tags:
+        - Rumah
+      summary: Update Rumah
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                blok_nomor:
+                  type: string
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags:
+        - Rumah
+      summary: Hapus Rumah
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+
+  '/rumah/{id}/penghuni':
+    post:
+      tags:
+        - Penghuni Rumah
+      summary: Assign Penghuni ke Rumah
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_penghuni:
+                  type: string
+                  format: uuid
+                tanggal_masuk:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Assigned
+
+  '/rumah/{id}/penghuni/{idPenghuni}':
+    patch:
+      tags:
+        - Penghuni Rumah
+      summary: Checkout Penghuni dari Rumah
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: idPenghuni
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tanggal_keluar:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Checked out
+
+  # ----------------------------------------------------------------------
+  # TAGIHAN & IURAN
+  # ----------------------------------------------------------------------
+  /iuran:
+    get:
+      tags:
+        - Iuran
+      summary: List Master Iuran
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+        - Iuran
+      summary: Tambah Iuran
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nama:
+                  type: string
+                  example: "Kebersihan"
+                biaya:
+                  type: integer
+                  example: 15000
+      responses:
+        '201':
+          description: Created
+
+  '/iuran/{id}':
+    patch:
+      tags:
+        - Iuran
+      summary: Update Iuran
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nama:
+                  type: string
+                biaya:
+                  type: integer
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags:
+        - Iuran
+      summary: Hapus Iuran
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+
+  /tagihan/generate:
+    post:
+      tags:
+        - Tagihan
+      summary: Generate Tagihan Bulanan (Massal)
+      description: Membuat tagihan otomatis untuk seluruh rumah yang berstatus is_filled = true, dikalikan dengan seluruh tipe iuran yang ada. Mencegah duplikasi jika sudah ada.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bulan, tahun]
+              properties:
+                bulan:
+                  type: integer
+                  example: 6
+                tahun:
+                  type: integer
+                  example: 2026
+      responses:
+        '200':
+          description: OK
+
+  /tagihan:
+    get:
+      tags:
+        - Tagihan
+      summary: List Tagihan (Filterable)
+      parameters:
+        - name: bulan
+          in: query
+          schema:
+            type: integer
+        - name: tahun
+          in: query
+          schema:
+            type: integer
+        - name: is_paid
+          in: query
+          schema:
+            type: boolean
+        - name: id_rumah
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+
+  '/tagihan/{id}':
+    delete:
+      tags:
+        - Tagihan
+      summary: Hapus Tagihan (Hanya yang belum lunas)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+
+  # ----------------------------------------------------------------------
+  # KEUANGAN (PEMASUKAN & PENGELUARAN)
+  # ----------------------------------------------------------------------
+  /keuangan/ringkasan:
+    get:
+      tags:
+        - Keuangan
+      summary: Ringkasan Saldo
+      responses:
+        '200':
+          description: OK
+
+  /keuangan/export:
+    get:
+      tags:
+        - Keuangan
+      summary: Export Data Keuangan (.xlsx)
+      parameters:
+        - name: bulan
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: tahun
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: File Excel didownload
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /keuangan/pemasukan:
+    post:
+      tags:
+        - Keuangan (Pemasukan)
+      summary: Tambah Pemasukan Manual
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nama:
+                  type: string
+                biaya:
+                  type: integer
+                jenis:
+                  type: string
+                  enum: [pembayaran_iuran, donasi, hibah, lainnya]
+                tanggal:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Created
+
+  /keuangan/pemasukan/pagination:
+    get:
+      tags:
+        - Keuangan (Pemasukan)
+      summary: List Pemasukan (Paginated)
+      parameters:
+        - name: jenis
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /keuangan/pengeluaran:
+    post:
+      tags:
+        - Keuangan (Pengeluaran)
+      summary: Tambah Pengeluaran Manual
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nama:
+                  type: string
+                biaya:
+                  type: integer
+                jenis:
+                  type: string
+                  enum: [operasional, perbaikan, gaji, lainnya]
+                tanggal:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Created
+
+  /keuangan/pengeluaran/pagination:
+    get:
+      tags:
+        - Keuangan (Pengeluaran)
+      summary: List Pengeluaran (Paginated)
+      parameters:
+        - name: jenis
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
