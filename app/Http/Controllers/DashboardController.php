@@ -70,22 +70,32 @@ class DashboardController extends Controller
      *
      * Penghuni dengan tagihan is_paid=false bulan ini, limit 10.
      */
-    public function penghuniBelumBayar(): JsonResponse
+    public function penghuniBelumBayar(Request $request): JsonResponse
     {
         $bulanIni = Carbon::now()->month;
         $tahunIni = Carbon::now()->year;
 
-        $tagihan = Tagihan::where('is_paid', false)
+        $page = max(1, (int) $request->query('page', 1));
+        $limit = max(1, (int) $request->query('limit', 5));
+
+        $query = Tagihan::where('is_paid', false)
             ->where('bulan', $bulanIni)
             ->where('tahun', $tahunIni)
-            ->with(['penghuni', 'rumah', 'iuran'])
-            ->limit(10)
-            ->get();
+            ->with(['penghuni', 'rumah', 'iuran']);
+
+        $total = $query->count();
+        $tagihan = $query->skip(($page - 1) * $limit)->take($limit)->get();
 
         return response()->json([
             'status' => true,
             'message' => 'Berhasil',
             'data' => $tagihan,
+            'meta' => [
+                'total' => $total,
+                'total_pages' => (int) ceil($total / $limit),
+                'page' => $page,
+                'limit' => $limit,
+            ],
         ]);
     }
 

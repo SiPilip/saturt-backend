@@ -9,16 +9,40 @@ use Illuminate\Http\Request;
 class IuranController extends Controller
 {
     /**
-     * GET /iuran
+     * GET /iuran/pagination
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $iuran = Iuran::orderBy('nama')->get();
+        $limit = $request->query('limit', 10);
+        $search = $request->query('search', '');
+        $sortBy = $request->query('sort_by', 'created_at');
+        $sortDir = $request->query('sort_dir', 'desc');
+
+        $allowedSorts = ['nama', 'biaya', 'created_at'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'created_at';
+        }
+        $sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+
+        $query = Iuran::query();
+
+        if ($search) {
+            $query->where('nama', 'like', "%{$search}%");
+        }
+
+        $query->orderBy($sortBy, $sortDir);
+        $iuran = $query->paginate($limit);
 
         return response()->json([
             'status' => true,
-            'message' => 'Berhasil',
-            'data' => $iuran,
+            'message' => 'Berhasil mengambil data Iuran',
+            'data' => $iuran->items(),
+            'meta' => [
+                'total' => $iuran->total(),
+                'total_pages' => $iuran->lastPage(),
+                'page' => $iuran->currentPage(),
+                'limit' => $iuran->perPage(),
+            ],
         ]);
     }
 

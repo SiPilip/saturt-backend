@@ -16,6 +16,14 @@ class PemasukanController extends Controller
         $page = max(1, (int) $request->query('page', 1));
         $limit = max(1, (int) $request->query('limit', 15));
         $search = $request->query('search');
+        
+        $sortBy = $request->query('sort_by', 'tanggal');
+        $sortDir = strtolower($request->query('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        
+        $validSortColumns = ['tanggal', 'biaya', 'nama', 'jenis', 'created_at'];
+        if (!in_array($sortBy, $validSortColumns)) {
+            $sortBy = 'tanggal';
+        }
 
         $query = Pemasukan::query();
 
@@ -27,7 +35,7 @@ class PemasukanController extends Controller
         }
 
         $total = $query->count();
-        $data = $query->orderByDesc('tanggal')->skip(($page - 1) * $limit)->take($limit)->get();
+        $data = $query->orderBy($sortBy, $sortDir)->skip(($page - 1) * $limit)->take($limit)->get();
 
         return response()->json([
             'status' => true,

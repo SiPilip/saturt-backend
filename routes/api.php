@@ -63,7 +63,7 @@ Route::middleware('auth:api')->group(function () {
 
     // Iuran
     Route::prefix('iuran')->group(function () {
-        Route::get('/', [IuranController::class, 'index']);
+        Route::get('/pagination', [IuranController::class, 'index']);
         Route::post('/', [IuranController::class, 'store']);
         Route::patch('/{id}', [IuranController::class, 'update']);
         Route::delete('/{id}', [IuranController::class, 'destroy']);

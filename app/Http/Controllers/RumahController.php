@@ -16,15 +16,25 @@ class RumahController extends Controller
         $search = $request->query('search');
         $page = max(1, (int) $request->query('page', 1));
         $limit = max(1, (int) $request->query('limit', 15));
+        $sortBy = $request->query('sort_by', 'blok_nomor');
+        $sortDir = strtolower($request->query('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+        
+        $validSortColumns = ['blok_nomor', 'is_filled', 'created_at'];
+        if (!in_array($sortBy, $validSortColumns)) {
+            $sortBy = 'blok_nomor';
+        }
 
-        $query = Rumah::with(['penghuniAktif.penghuni']);
+        $query = Rumah::with(['penghuniAktif.penghuni'])
+            ->withCount(['tagihan as tagihan_belum_bayar_count' => function ($q) {
+                $q->where('is_paid', false);
+            }]);
 
         if ($search) {
             $query->where('blok_nomor', 'like', "%{$search}%");
         }
 
         $total = $query->count();
-        $data = $query->orderBy('blok_nomor')->skip(($page - 1) * $limit)->take($limit)->get();
+        $data = $query->orderBy($sortBy, $sortDir)->skip(($page - 1) * $limit)->take($limit)->get();
 
         return response()->json([
             'status' => true,
@@ -136,7 +146,15 @@ class RumahController extends Controller
         $page = max(1, (int) $request->query('page', 1));
         $limit = max(1, (int) $request->query('limit', 15));
 
-        $query = $rumah->penghuniRumah()->with('penghuni')->orderByDesc('tanggal_masuk');
+        $sortBy = $request->query('sort_by', 'tanggal_masuk');
+        $sortDir = strtolower($request->query('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        
+        $validSortColumns = ['tanggal_masuk', 'tanggal_keluar', 'created_at'];
+        if (!in_array($sortBy, $validSortColumns)) {
+            $sortBy = 'tanggal_masuk';
+        }
+
+        $query = $rumah->penghuniRumah()->with('penghuni')->orderBy($sortBy, $sortDir);
 
         $total = $query->count();
         $data = $query->skip(($page - 1) * $limit)->take($limit)->get();
@@ -171,9 +189,23 @@ class RumahController extends Controller
         $page = max(1, (int) $request->query('page', 1));
         $limit = max(1, (int) $request->query('limit', 15));
 
+        $sortBy = $request->query('sort_by', 'created_at');
+        $sortDir = strtolower($request->query('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        
+        $validSortColumns = ['tahun', 'bulan', 'created_at', 'is_paid'];
+        if (!in_array($sortBy, $validSortColumns)) {
+            $sortBy = 'created_at';
+        }
+
         $query = $rumah->tagihan()->whereHas('pembayaran')
-            ->with(['pembayaran', 'iuran', 'penghuni'])
-            ->orderByDesc('tahun')->orderByDesc('bulan');
+            ->with(['pembayaran', 'iuran', 'penghuni']);
+            
+        // Jika disort berdasarkan default/created_at, kita sort berdsarkan tahun+bulan
+        if ($sortBy === 'created_at') {
+             $query->orderBy('tahun', $sortDir)->orderBy('bulan', $sortDir);
+        } else {
+             $query->orderBy($sortBy, $sortDir);
+        }
 
         $total = $query->count();
         $data = $query->skip(($page - 1) * $limit)->take($limit)->get();

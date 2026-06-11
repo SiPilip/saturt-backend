@@ -19,8 +19,19 @@ class PenghuniController extends Controller
         $page = max(1, (int) $request->query('page', 1));
         $limit = max(1, (int) $request->query('limit', 15));
 
+        $sortBy = $request->query('sort_by', 'created_at');
+        $sortDir = strtolower($request->query('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        
+        // Whitelist kolom yang bisa disortir untuk keamanan
+        $validSortColumns = ['nama', 'nik', 'created_at', 'status_penghuni', 'telephone', 'is_menikah'];
+        if (!in_array($sortBy, $validSortColumns)) {
+            $sortBy = 'created_at';
+        }
+
         $query = Penghuni::with(['penghuniRumah' => function ($q) {
             $q->whereNull('tanggal_keluar')->with('rumah');
+        }])->withCount(['tagihan as tagihan_belum_bayar_count' => function ($q) {
+            $q->where('is_paid', false);
         }]);
 
         if ($search) {
@@ -29,6 +40,9 @@ class PenghuniController extends Controller
                     ->orWhere('nik', 'like', "%{$search}%");
             });
         }
+
+        // Terapkan sorting
+        $query->orderBy($sortBy, $sortDir);
 
         $total = $query->count();
         $data = $query->skip(($page - 1) * $limit)->take($limit)->get();

@@ -19,6 +19,14 @@ class TagihanController extends Controller
         $page = max(1, (int) $request->query('page', 1));
         $limit = max(1, (int) $request->query('limit', 15));
 
+        $sortBy = $request->query('sort_by', 'created_at');
+        $sortDir = strtolower($request->query('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        
+        $validSortColumns = ['tahun', 'bulan', 'created_at', 'is_paid', 'nominal'];
+        if (!in_array($sortBy, $validSortColumns)) {
+            $sortBy = 'created_at';
+        }
+
         $query = Tagihan::with(['rumah', 'iuran', 'penghuni', 'pembayaran']);
 
         if ($request->has('bulan')) {
@@ -34,8 +42,14 @@ class TagihanController extends Controller
             $query->where('id_rumah', $request->query('id_rumah'));
         }
 
+        if ($sortBy === 'created_at') {
+             $query->orderByDesc('tahun')->orderByDesc('bulan');
+        } else {
+             $query->orderBy($sortBy, $sortDir);
+        }
+
         $total = $query->count();
-        $data = $query->orderByDesc('tahun')->orderByDesc('bulan')->skip(($page - 1) * $limit)->take($limit)->get();
+        $data = $query->skip(($page - 1) * $limit)->take($limit)->get();
 
         return response()->json([
             'status' => true,

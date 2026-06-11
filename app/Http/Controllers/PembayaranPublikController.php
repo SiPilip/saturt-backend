@@ -139,12 +139,13 @@ class PembayaranPublikController extends Controller
     }
 
     /**
-     * GET /payment?nik= — riwayat pembayaran penghuni
+     * GET /payment?nik=&limit= — riwayat pembayaran penghuni
      */
     public function riwayat(Request $request): JsonResponse
     {
         $request->validate([
             'nik' => 'required|string',
+            'limit' => 'sometimes|integer|min:1|max:100',
         ]);
 
         $penghuni = Penghuni::where('nik', $request->nik)->first();
@@ -156,9 +157,12 @@ class PembayaranPublikController extends Controller
             ], 404);
         }
 
+        $limit = (int) $request->input('limit', 10);
+
         $riwayat = Pembayaran::where('id_penghuni', $penghuni->id)
             ->with(['tagihan.iuran', 'tagihan.rumah'])
             ->orderByDesc('tanggal_bayar')
+            ->limit($limit)
             ->get();
 
         return response()->json([
