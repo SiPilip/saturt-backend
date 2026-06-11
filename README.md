@@ -1,6 +1,7 @@
 # SatuRT - Aplikasi Manajemen RT - JagoanHosting
 
 SatuRT adalah aplikasi untuk manajemen Rukun Tetangga (RT) yang mencakup fungsionalitas untuk mengelola penghuni, rumah, generate tagihan bulanan, pencatatan iuran, hingga laporan keuangan dan export file ke Excel.
+
 - Backend: Pure REST API dengan Laravel 11
 - Frontend: React + Vite + Shadcn UI
 
@@ -9,18 +10,20 @@ SatuRT adalah aplikasi untuk manajemen Rukun Tetangga (RT) yang mencakup fungsio
 ## Requirements
 
 ### Kebutuhan Backend (Server)
+
 - **PHP**: 8.3.31
 - **Composer**: Versi 2.4.1
 - **Database**: MySQL 8.0.30
 - **Ekstensi PHP**:
-  - ext-pdo
-  - ext-mbstring
-  - ext-openssl
-  - ext-gd
-  - ext-zip
-  - ext-fileinfo
+    - ext-pdo
+    - ext-mbstring
+    - ext-openssl
+    - ext-gd
+    - ext-zip
+    - ext-fileinfo
 
 ### Kebutuhan Frontend (Client)
+
 - **Node.js**: 24.8.0
 - **NPM**: 11.6.0
 
@@ -40,14 +43,16 @@ composer install
 
 **Konfigurasi Environment (.env)**
 Salin file `.env.example` menjadi `.env`. Di Windows jalankan:
+
 ```bash
 copy .env.example .env
 ```
 
 Jalankan perintah setup berikut:
+
 ```bash
-php artisan key:generate 
-php artisan jwt:secret 
+php artisan key:generate
+php artisan jwt:secret
 php artisan storage:link
 php artisan migrate --seed
 php artisan serve
@@ -57,7 +62,7 @@ php artisan serve
 
 ### Setup Frontend (React + Vite)
 
-*Buka terminal baru untuk frontend.*
+_Buka terminal baru untuk frontend._
 
 ```bash
 cd saturt-frontend
@@ -67,10 +72,11 @@ npm run dev
 
 ---
 
-## Kredensial Login 
+## Kredensial Login
 
 - **NIK:** `3271000000000001`
 - **Password:** `admin123`
 
 ---
-*Developed for Skill Fit Test.*
+
+_Developed for Skill Fit Test._
