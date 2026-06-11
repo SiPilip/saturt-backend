@@ -1,69 +1,130 @@
-# Saturt - REST API Backend
+# Saturt - Aplikasi Manajemen RT
 
-Saturt adalah aplikasi backend murni (Pure REST API) untuk manajemen Rukun Tetangga (RT). API ini mencakup fungsionalitas untuk mengelola penghuni, rumah, generate tagihan bulanan, pencatatan iuran publik, hingga laporan keuangan dan export file ke Excel.
+Saturt adalah aplikasi untuk manajemen Rukun Tetangga (RT) yang mencakup fungsionalitas untuk mengelola penghuni, rumah, generate tagihan bulanan, pencatatan iuran, hingga laporan keuangan dan export file ke Excel.
 
-API ini didesain sebagai **Pure Backend** dengan otentikasi berbasis **JWT (JSON Web Tokens) via HttpOnly Cookie**.
-
-## 🛠️ Stack Teknologi
-
-- **Framework:** Laravel 11 (PHP 8.3+)
-- **Database:** MySQL
-- **Auth:** `php-open-source-saver/jwt-auth` (JWT Token di HttpOnly Cookie)
-- **Image Processing:** `intervention/image` (v4)
-- **Excel Export:** `maatwebsite/excel` (v3.1)
-- **Dokumentasi API:** Swagger / OpenAPI 3.0
+Aplikasi ini menggunakan arsitektur **Terpisah (Decoupled)**:
+- **Backend:** Pure REST API dengan Laravel 11
+- **Frontend:** React + Vite + Shadcn UI
 
 ---
 
-## 🚀 Panduan Instalasi (Untuk Reviewer)
+## 💻 System Requirements (Persyaratan Sistem)
 
-Aplikasi ini **TIDAK** menggunakan _Node.js/NPM_, sehingga Anda tidak perlu menjalankan `npm install`. Proses setup murni menggunakan ekosistem PHP.
+**PENTING:** Karena aplikasi menggunakan Laravel 11 dan fitur modern, versi PHP sangat krusial untuk mencegah error (*syntax error, missing extensions, dll*).
 
-### 1. Clone & Install Dependencies
+### 1. Kebutuhan Backend (Server)
+- **PHP:** Versi **8.2.12** atau **8.3.x** (Wajib). *Versi di bawah 8.2 tidak akan didukung oleh Laravel 11.*
+- **Composer:** Versi 2.x
+- **Database:** MySQL versi 8.0+ atau MariaDB versi 10.4+
+- **Ekstensi PHP yang Wajib Aktif (di `php.ini`):**
+  - `ext-pdo`
+  - `ext-mbstring`
+  - `ext-openssl`
+  - `ext-gd` *(Untuk library intervention/image)*
+  - `ext-zip` *(Untuk export Excel maatwebsite/excel)*
+  - `ext-fileinfo`
 
-```bash
-git clone <repository_url>
-cd saturt-backend
-composer install
-```
+### 2. Kebutuhan Frontend (Client)
+- **Node.js:** Versi **18.x** atau **20.x** (LTS disarankan)
+- **NPM:** Bawaan dari Node.js (atau bisa menggunakan `pnpm` / `yarn`)
 
-### 2. Konfigurasi Environment
+---
 
-Salin file environment dan atur kredensial database Anda (secara default diset ke `saturt_db` dengan username `root`):
+## 🚀 Panduan Instalasi (Step-by-Step)
 
-```bash
-cp .env.example .env
-```
+Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi di komputer lokal (localhost).
 
-_(Pastikan Anda telah membuat database kosong bernama `saturt_db` di MySQL Anda sebelum lanjut ke langkah berikutnya)._
+### Bagian A: Setup Backend (Laravel)
 
-### 3. Generate Keys & Storage Link
+1. **Clone Repository & Masuk ke Folder Backend**
+   Buka terminal/CMD, lalu jalankan:
+   ```bash
+   git clone <repository_url>
+   cd saturt-backend
+   ```
 
-Jalankan perintah berikut secara berurutan untuk menyiapkan kunci enkripsi, JWT secret, dan symbolic link untuk penyimpanan foto KTP:
+2. **Install Dependencies PHP**
+   Pastikan Anda menggunakan PHP 8.2+ sebelum menjalankan perintah ini:
+   ```bash
+   composer install
+   ```
 
-```bash
-php artisan key:generate
-php artisan jwt:secret
-php artisan storage:link
-```
+3. **Buat Database MySQL**
+   Buka aplikasi database Anda (seperti phpMyAdmin, DBeaver, atau MySQL CLI) dan buat database kosong dengan nama:
+   `saturt_db`
 
-### 4. Migrasi & Seeding Database
+4. **Konfigurasi Environment (.env)**
+   Salin file `.env.example` menjadi `.env`. Di Windows jalankan:
+   ```bash
+   copy .env.example .env
+   ```
+   Lalu buka file `.env` di text editor, pastikan konfigurasi database sesuai dengan komputer Anda:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=saturt_db
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
 
-Aplikasi dilengkapi dengan seeder untuk akun Admin dan beberapa data iuran default.
+5. **Generate Keys & Setup Storage**
+   Jalankan tiga perintah ini secara berurutan untuk membuat App Key, JWT Secret Key, dan menautkan folder storage untuk upload gambar:
+   ```bash
+   php artisan key:generate
+   php artisan jwt:secret
+   php artisan storage:link
+   ```
 
-```bash
-php artisan migrate --seed
-```
+6. **Migrasi dan Seeding Database**
+   Perintah ini akan membuat semua tabel yang dibutuhkan sekaligus memasukkan akun Admin default dan data iuran dasar:
+   ```bash
+   php artisan migrate --seed
+   ```
 
-Setelah proses ini, akun default berikut akan tersedia:
+7. **Jalankan Server Backend**
+   ```bash
+   php artisan serve
+   ```
+   *Backend sekarang berjalan di `http://127.0.0.1:8000`*
 
-- **NIK (Login):** `3271000000000001`
+---
+
+### Bagian B: Setup Frontend (React + Vite)
+
+Buka **Terminal/CMD Baru** (jangan matikan terminal backend), lalu ikuti langkah ini:
+
+1. **Masuk ke Folder Frontend**
+   ```bash
+   cd saturt-frontend
+   ```
+
+2. **Install Dependencies Node.js**
+   ```bash
+   npm install
+   ```
+
+3. **Konfigurasi Environment (.env)**
+   Pastikan file `.env` di folder frontend sudah menunjuk ke URL backend yang benar (default-nya sudah mengarah ke port 8000):
+   ```env
+   VITE_API_URL=http://localhost:8000/api
+   VITE_STORAGE_URL=http://localhost:8000/storage
+   ```
+
+4. **Jalankan Server Frontend**
+   ```bash
+   npm run dev
+   ```
+   *Frontend sekarang berjalan di `http://localhost:5173` (Cek link yang muncul di terminal).*
+
+---
+
+## 🔐 Kredensial Login Default
+
+Setelah proses migrasi dan seeding selesai, Anda bisa login ke aplikasi melalui frontend (Halaman Admin) menggunakan akun berikut:
+
+- **NIK:** `3271000000000001`
 - **Password:** `admin123`
 
-### 5. Jalankan Server Lokal
-
-```bash
-php artisan serve
-```
-
-_Developed for Skill Fit Test._
+---
+*Developed for Skill Fit Test.*
