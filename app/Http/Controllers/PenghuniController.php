@@ -21,18 +21,22 @@ class PenghuniController extends Controller
 
         $sortBy = $request->query('sort_by', 'created_at');
         $sortDir = strtolower($request->query('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
-        
+
         // Whitelist kolom yang bisa disortir untuk keamanan
         $validSortColumns = ['nama', 'nik', 'created_at', 'status_penghuni', 'telephone', 'is_menikah'];
         if (!in_array($sortBy, $validSortColumns)) {
             $sortBy = 'created_at';
         }
 
-        $query = Penghuni::with(['penghuniRumah' => function ($q) {
-            $q->whereNull('tanggal_keluar')->with('rumah');
-        }])->withCount(['tagihan as tagihan_belum_bayar_count' => function ($q) {
-            $q->where('is_paid', false);
-        }]);
+        $query = Penghuni::with([
+            'penghuniRumah' => function ($q) {
+                $q->whereNull('tanggal_keluar')->with('rumah');
+            }
+        ])->withCount([
+                    'tagihan as tagihan_belum_bayar_count' => function ($q) {
+                        $q->where('is_paid', false);
+                    }
+                ]);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -80,7 +84,7 @@ class PenghuniController extends Controller
             $image = Image::decode($request->file('foto_ktp'));
             $image->scale(width: 800);
 
-            $filename = 'ktp/'.uniqid().'.jpg';
+            $filename = 'ktp/' . uniqid() . '.jpg';
             Storage::disk('public')->put($filename, (string) $image->encodeUsingFileExtension('jpg', 80));
             $data['foto_ktp'] = $filename;
         }
@@ -101,7 +105,7 @@ class PenghuniController extends Controller
     {
         $penghuni = Penghuni::find($id);
 
-        if (! $penghuni) {
+        if (!$penghuni) {
             return response()->json([
                 'status' => false,
                 'message' => 'Data tidak ditemukan',
@@ -128,7 +132,7 @@ class PenghuniController extends Controller
             $image = Image::decode($request->file('foto_ktp'));
             $image->scale(width: 800);
 
-            $filename = 'ktp/'.uniqid().'.jpg';
+            $filename = 'ktp/' . uniqid() . '.jpg';
             Storage::disk('public')->put($filename, (string) $image->encodeUsingFileExtension('jpg', 80));
             $data['foto_ktp'] = $filename;
         }
@@ -149,7 +153,7 @@ class PenghuniController extends Controller
     {
         $penghuni = Penghuni::find($id);
 
-        if (! $penghuni) {
+        if (!$penghuni) {
             return response()->json([
                 'status' => false,
                 'message' => 'Data tidak ditemukan',
@@ -185,7 +189,7 @@ class PenghuniController extends Controller
     {
         $penghuni = Penghuni::find($id);
 
-        if (! $penghuni) {
+        if (!$penghuni) {
             return response()->json([
                 'status' => false,
                 'message' => 'Data tidak ditemukan',
@@ -221,7 +225,7 @@ class PenghuniController extends Controller
     {
         $penghuni = Penghuni::find($id);
 
-        if (! $penghuni) {
+        if (!$penghuni) {
             return response()->json([
                 'status' => false,
                 'message' => 'Data tidak ditemukan',
